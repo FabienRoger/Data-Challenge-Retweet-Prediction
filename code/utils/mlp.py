@@ -1,7 +1,8 @@
+import numpy as np
 import tensorflow as tf
-from tensorflow import keras
-from keras import layers
 from attrs import define
+from keras import layers
+from tensorflow import keras
 
 
 @define
@@ -25,6 +26,7 @@ class PrintEveryNEpochCallback(tf.keras.callbacks.Callback):
 
 def get_scheduler(lr0, decrease_start):
     """Return a scheduler implementing inverse learning rate decay"""
+
     def schedule(epoch, lr):
         if epoch < decrease_start:
             return lr0
@@ -34,8 +36,13 @@ def get_scheduler(lr0, decrease_start):
 
 
 def get_trained_model(
-    X_train, y_train, units=64, epochs=2000, lr0=0.003, lr_decrease_start=40
-):
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    units=64,
+    epochs=2000,
+    lr0=0.003,
+    lr_decrease_start=40,
+) -> keras.Model:
     """Build and train a simple MLP model"""
     scheduler = tf.keras.callbacks.LearningRateScheduler(
         get_scheduler(lr0, lr_decrease_start), verbose=0

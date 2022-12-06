@@ -11,7 +11,10 @@ import csv
 from utils.mlp import get_trained_model
 
 from utils.tree import Tree
-from utils.data_processing import extract_bucketized_features
+from utils.data_processing import (
+    extract_bucketized_features,
+    extract_continuous_features,
+)
 
 #%%
 # Load data
@@ -35,62 +38,11 @@ tree = Tree(min_bucket_size=300, nb_cat=nb_cat, cols_n=list(range(len(cols))))(
 preds = tree(X_ev)
 
 #%%
-# preprocessing for MLP model
-
-important_words = [
-    "rt",
-    "fav",
-    "favorie",
-    "favories",
-    "rewteet",
-    "retweets",
-    "click",
-    "macron",
-    "lepen",
-    "melenchon",
-]
-
-
-def pre_process_mlp(df, train=True):
-    if train:
-        df["logrt"] = df.retweets_count.map(lambda x: log10(x + 1))
-    df["logfav"] = df.favorites_count.map(lambda x: log10(x + 1))
-    df["logfriend"] = df.friends_count.map(lambda x: log10(x + 1))
-    df["logstatus"] = df.statuses_count.map(lambda x: log10(x + 1))
-    df["text_len"] = df.text.map(lambda x: len(x) / 140)
-    df["word_count"] = df.text.map(lambda x: len(x.split()) / 140)
-    df["normed_time"] = df.timestamp.map(lambda t: log10(1.64775e12 - t))
-    for w in important_words:
-        df[w] = df.text.map(lambda t: 1 if w in [word.lower() for word in t] else 0)
-    df["hour"] = df.timestamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0).hour)
-    df["day"] = df.timestamp.apply(
-        lambda x: datetime.fromtimestamp(x / 1000.0).weekday()
-    )
-    Xt = df[
-        [
-            "logfav",
-            "text_len",
-            "logfriend",
-            "word_count",
-            "logstatus",
-            "normed_time",
-            "verified",
-            *important_words,
-        ]
-    ].values
-    if train:
-        yt = df["retweets_count"].values[:, None]
-        return Xt, yt
-    else:
-        return Xt
-
-
-#%%
 # Train MLP model
 thresh, eval_tresh = 100, 100
 
 xltdf = train_df[train_df["favorites_count"] > thresh].copy()
-X_train, y_train, ms = pre_process_mlp(xltdf)
+X_train, y_train, ms = extract_continuous_features(xltdf)
 
 
 model = get_trained_model(X_train, y_train)
@@ -98,7 +50,7 @@ model = get_trained_model(X_train, y_train)
 
 #%%
 # Run tree on test data
-X_test = pre_process_mlp(ev_df, train=False, mean_and_std=ms)
+X_test = extract_continuous_features(ev_df, train=False, mean_and_std=ms)
 y_test = model.predict(X_test)[:, 0]
 name = f"predictions{thresh}_{eval_tresh}.txt"
 with open(name, "w") as f:

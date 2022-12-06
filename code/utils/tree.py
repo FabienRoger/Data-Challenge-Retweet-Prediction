@@ -27,12 +27,12 @@ class Tree:
 
     def prediction_factory(self, x, y, depth=0):
         """Returns a function that predicts the y value for a given x value"""
-        
+
         # If the node is a leaf, return the median of the y values
         possible_cuts = [c for c in self.cols_n if self.can_cut(x, c)]
         if not possible_cuts:
             return lambda x: np.full((x.shape[0],), np.median(y))
-        
+
         # Find the best cut
         cuts_losses = [
             (sum(self.loss(sub_y) for (sub_x, sub_y) in self.cut(x, y, c=c)), c)
