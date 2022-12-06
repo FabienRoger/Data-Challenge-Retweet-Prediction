@@ -5,7 +5,9 @@ from attrs import define
 
 
 @define
-class print_every_n_epochs_Callback(tf.keras.callbacks.Callback):
+class PrintEveryNEpochCallback(tf.keras.callbacks.Callback):
+    """Callback that prints the loss every n epochs"""
+
     n: int = 10
 
     def on_epoch_end(self, epoch, logs=None):
@@ -21,19 +23,24 @@ class print_every_n_epochs_Callback(tf.keras.callbacks.Callback):
                 print("Epoch: {:>3} | Loss: ".format(epoch) + f"{logs['loss']:.4e}")
 
 
-lr0 = 0.003
-decrease_start = 40
+def get_scheduler(lr0, decrease_start):
+    """Return a scheduler implementing inverse learning rate decay"""
+    def schedule(epoch, lr):
+        if epoch < decrease_start:
+            return lr0
+        return lr0 * decrease_start / epoch
+
+    return schedule
 
 
-def schedule(epoch, lr):
-    if epoch < decrease_start:
-        return lr0
-    return lr0 * decrease_start / epoch
-
-
-def get_trained_model(X_train, y_train, units=64, epochs=2000):
-    scheduler = tf.keras.callbacks.LearningRateScheduler(schedule, verbose=0)
-    my_callbacks = [print_every_n_epochs_Callback(10), scheduler]
+def get_trained_model(
+    X_train, y_train, units=64, epochs=2000, lr0=0.003, lr_decrease_start=40
+):
+    """Build and train a simple MLP model"""
+    scheduler = tf.keras.callbacks.LearningRateScheduler(
+        get_scheduler(lr0, lr_decrease_start), verbose=0
+    )
+    my_callbacks = [PrintEveryNEpochCallback(10), scheduler]
 
     _, n_features = X_train.shape
 

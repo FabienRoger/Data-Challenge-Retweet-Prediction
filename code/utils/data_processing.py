@@ -21,7 +21,11 @@ def extract_bucketized_features(
     buckets_borders: Optional[list[float]] = None,
     to_bucketize=DEFAULT_BUCKETIZE,
 ):
-    """Return the features X (np.ndarray), the bucket borders and the columns names"""
+    """Return the features X (np.ndarray), the bucket borders and the columns names.
+
+    buckets_borders is a dict which tells the borders of the buckets
+    (it should be computed on the training set).
+    to_bucketize tells which columns to bucketize and how many buckets to use."""
     cols = ["urls_count", "hashtags_count", "verified"]
 
     df["urls_count"] = df.urls.map(lambda x: min(len(x.split(",")), 2) - 1)
@@ -32,6 +36,7 @@ def extract_bucketized_features(
 
     if buckets_borders is None:
         buckets_borders = {}
+
     for col_name, n_buckets in to_bucketize.items():
 
         if col_name in buckets_borders:
@@ -75,7 +80,13 @@ def extract_continuous_features(
     mean_and_std: Optional[tuple[np.ndarray, np.ndarray]] = None,
 ):
     """If train, return the features X (np.ndarray), the labels y (np.ndarray), and the mean_and_std
-    else return only the features X  (np.ndarray)"""
+    else return only the features X  (np.ndarray)
+
+    important_words is a list of words which are used to create new features
+
+    mean_and_std is a tuple (mean, std) which is used to normalize the features,
+    (it should be computed on the training set).
+    """
 
     if train:
         df["logrt"] = df.retweets_count.map(lambda x: log10(x + 1))
@@ -103,14 +114,14 @@ def extract_continuous_features(
             *important_words,
         ]
     ].values
-    
+
     # Normalization
     if mean_and_std is None:
         mean = Xt.mean(axis=0)
         std = Xt.std(axis=0)
         mean_and_std = (mean, std)
     Xt = (Xt - mean_and_std[0]) / mean_and_std[1]
-    
+
     if train:
         yt = df["retweets_count"].values[:, None]
         return Xt, yt

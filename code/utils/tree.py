@@ -11,28 +11,36 @@ class Tree:
     cols_n: int
 
     def can_cut(self, x, c):
+        """Check if node is leaf or not"""
         return all(
             (x[:, c] == i).sum() >= self.min_bucket_size for i in range(self.nb_cat[c])
         )
 
     def loss(self, y):
+        """Compute the loss of a node"""
         return np.abs(y - np.median(y)).sum()
 
     def cut(self, x, *arrays, c=-1):
+        """Cut a node into sub-nodes"""
         masks = [x[:, c] == i for i in range(self.nb_cat[c])]
         return [(x[m], *[a[m] for a in arrays]) for m in masks]
 
     def prediction_factory(self, x, y, depth=0):
         """Returns a function that predicts the y value for a given x value"""
+        
+        # If the node is a leaf, return the median of the y values
         possible_cuts = [c for c in self.cols_n if self.can_cut(x, c)]
         if not possible_cuts:
             return lambda x: np.full((x.shape[0],), np.median(y))
+        
+        # Find the best cut
         cuts_losses = [
             (sum(self.loss(sub_y) for (sub_x, sub_y) in self.cut(x, y, c=c)), c)
             for c in possible_cuts
         ]
         best_cut = min(cuts_losses)[1]
 
+        # Recursively build the tree
         child_fns = []
         for x_c, y_c in self.cut(x, y, c=best_cut):
             child_fns.append(self.prediction_factory(x_c, y_c, depth=depth + 1))
