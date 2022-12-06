@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from typing import Optional
 import numpy as np
 import pandas as pd
@@ -59,18 +59,7 @@ def extract_bucketized_features(
     return X, buckets_borders, cols
 
 
-DEFAULT_IMPORTANT_WORDS = [
-    "rt",
-    "fav",
-    "favorie",
-    "favories",
-    "rewteet",
-    "retweets",
-    "click",
-    "macron",
-    "lepen",
-    "melenchon",
-]
+DEFAULT_IMPORTANT_WORDS = ["rt"]
 
 
 def extract_continuous_features(
@@ -97,7 +86,7 @@ def extract_continuous_features(
     df["word_count"] = df.text.map(lambda x: len(x.split()) / 140)
     df["normed_time"] = df.timestamp.map(lambda t: log10(1.64775e12 - t))
     for w in important_words:
-        df[w] = df.text.map(lambda t: 1 if w in [word.lower() for word in t] else 0)
+        df[w] = df.text.map(lambda t: 1 if w in [word.lower() for word in t.split()] else 0)
     df["hour"] = df.timestamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0).hour)
     df["day"] = df.timestamp.apply(
         lambda x: datetime.fromtimestamp(x / 1000.0).weekday()
@@ -120,10 +109,11 @@ def extract_continuous_features(
         mean = Xt.mean(axis=0)
         std = Xt.std(axis=0)
         mean_and_std = (mean, std)
+        print(std)
     Xt = (Xt - mean_and_std[0]) / mean_and_std[1]
 
     if train:
         yt = df["retweets_count"].values[:, None]
-        return Xt, yt
+        return Xt, yt, mean_and_std
     else:
         return Xt

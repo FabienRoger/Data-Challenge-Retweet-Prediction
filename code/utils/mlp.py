@@ -5,11 +5,11 @@ from keras import layers
 from tensorflow import keras
 
 
-@define
 class PrintEveryNEpochCallback(tf.keras.callbacks.Callback):
     """Callback that prints the loss every n epochs"""
 
-    n: int = 10
+    def __init__(self, n: int = 1):
+        self.n = n
 
     def on_epoch_end(self, epoch, logs=None):
         if (int(epoch) % self.n) == 0:
@@ -24,7 +24,7 @@ class PrintEveryNEpochCallback(tf.keras.callbacks.Callback):
                 print("Epoch: {:>3} | Loss: ".format(epoch) + f"{logs['loss']:.4e}")
 
 
-def get_scheduler(lr0, decrease_start):
+def get_scheduler(lr0: float, decrease_start: float):
     """Return a scheduler implementing inverse learning rate decay"""
 
     def schedule(epoch, lr):

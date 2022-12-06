@@ -30,7 +30,7 @@ X_ev, _, _ = extract_bucketized_features(ev_df)
 nb_cat = [X_train[:, i].max() + 1 for i in range(len(cols))]
 #%%
 # train tree
-tree = Tree(min_bucket_size=300, nb_cat=nb_cat, cols_n=list(range(len(cols))))(
+tree = Tree(min_bucket_size=300, nb_cat=nb_cat, cols_n=list(range(len(cols)))).fit(
     X_train, y_train
 )
 #%%

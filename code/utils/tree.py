@@ -25,7 +25,7 @@ class Tree:
         masks = [x[:, c] == i for i in range(self.nb_cat[c])]
         return [(x[m], *[a[m] for a in arrays]) for m in masks]
 
-    def prediction_factory(self, x, y, depth=0):
+    def fit(self, x, y, depth=0):
         """Returns a function that predicts the y value for a given x value"""
 
         # If the node is a leaf, return the median of the y values
@@ -43,7 +43,7 @@ class Tree:
         # Recursively build the tree
         child_fns = []
         for x_c, y_c in self.cut(x, y, c=best_cut):
-            child_fns.append(self.prediction_factory(x_c, y_c, depth=depth + 1))
+            child_fns.append(self.fit(x_c, y_c, depth=depth + 1))
 
         def pred(x_pred):
             idxs = np.arange(0, x_pred.shape[0])
