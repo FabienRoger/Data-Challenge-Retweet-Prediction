@@ -1,20 +1,14 @@
 #%%
 # Imports
-import numpy as np
-import pandas as pd
-from datetime import datetime
-from sklearn.model_selection import train_test_split
-from math import log10
-
-
 import csv
-from utils.mlp import get_trained_model
 
-from utils.tree import Tree
+import pandas as pd
 from utils.data_processing import (
     extract_bucketized_features,
     extract_continuous_features,
 )
+from utils.mlp import get_trained_model
+from utils.tree import Tree
 
 #%%
 # Load data

@@ -86,7 +86,9 @@ def extract_continuous_features(
     df["word_count"] = df.text.map(lambda x: len(x.split()) / 140)
     df["normed_time"] = df.timestamp.map(lambda t: log10(1.64775e12 - t))
     for w in important_words:
-        df[w] = df.text.map(lambda t: 1 if w in [word.lower() for word in t.split()] else 0)
+        df[w] = df.text.map(
+            lambda t: 1 if w in [word.lower() for word in t.split()] else 0
+        )
     df["hour"] = df.timestamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0).hour)
     df["day"] = df.timestamp.apply(
         lambda x: datetime.fromtimestamp(x / 1000.0).weekday()

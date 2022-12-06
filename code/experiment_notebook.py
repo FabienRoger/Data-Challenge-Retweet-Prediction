@@ -1,22 +1,16 @@
 #%%
 # Imports
-import csv
 import json
-from datetime import datetime
-from math import log10
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-from keras import layers
 from sklearn.model_selection import train_test_split
-from tensorflow import keras
-from utils.mlp import get_trained_model
-from utils.tree import Tree
 from utils.data_processing import (
     extract_bucketized_features,
     extract_continuous_features,
 )
+from utils.mlp import get_trained_model
+from utils.tree import Tree
 
 #%%
 # Load data
