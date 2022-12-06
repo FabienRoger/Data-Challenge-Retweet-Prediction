@@ -46,10 +46,11 @@ model = get_trained_model(X_train, y_train)
 # Run tree on test data
 X_test = extract_continuous_features(ev_df, train=False, mean_and_std=ms)
 y_test = model.predict(X_test)[:, 0]
-name = f"predictions{thresh}_{eval_tresh}.txt"
-with open(name, "w") as f:
+with open("submission/predictions.txt", "w") as f:
     writer = csv.writer(f)
     writer.writerow(["TweetID", "retweets_count"])
     for i, row in ev_df.iterrows():
         pred = preds[i] if row["favorites_count"] <= eval_tresh else y_test[i]
         writer.writerow([row["TweetID"], str(int(pred))])
+read_file = pd.read_csv(f"submission/predictions.txt")
+read_file.to_csv(f"submission/predictions.csv", index=None)
