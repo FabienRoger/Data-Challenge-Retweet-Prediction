@@ -42,18 +42,19 @@ def get_trained_model(
     epochs=2000,
     lr0=0.003,
     lr_decrease_start=40,
+    reg=0.0,
 ) -> keras.Model:
     """Build and train a simple MLP model"""
     scheduler = tf.keras.callbacks.LearningRateScheduler(
         get_scheduler(lr0, lr_decrease_start), verbose=0
     )
-    my_callbacks = [PrintEveryNEpochCallback(10), scheduler]
+    my_callbacks = [PrintEveryNEpochCallback(100), scheduler]
 
     _, n_features = X_train.shape
 
     inputs = keras.Input(shape=(n_features,), name="digits")
     x = inputs
-    x = layers.Dense(units, activation="relu", name="dense_1")(x)
+    x = layers.Dense(units, activation="relu", name="dense_1", kernel_regularizer=tf.keras.regularizers.L2(reg))(x)
     x = layers.Dense(1, activation="linear", name="dense_2")(x)
     x = tf.keras.activations.exponential(x)
     x = layers.Dense(

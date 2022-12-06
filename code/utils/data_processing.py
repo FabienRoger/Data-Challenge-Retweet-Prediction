@@ -1,8 +1,9 @@
 from datetime import datetime
+from math import cos, log10, pi, sin
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from math import log10
 
 DEFAULT_BUCKETIZE = {
     "word_count": 5,
@@ -82,8 +83,8 @@ def extract_continuous_features(
     df["logfav"] = df.favorites_count.map(lambda x: log10(x + 1))
     df["logfriend"] = df.friends_count.map(lambda x: log10(x + 1))
     df["logstatus"] = df.statuses_count.map(lambda x: log10(x + 1))
-    df["text_len"] = df.text.map(lambda x: len(x) / 140)
-    df["word_count"] = df.text.map(lambda x: len(x.split()) / 140)
+    df["text_len"] = df.text.map(lambda x: len(x))
+    df["word_count"] = df.text.map(lambda x: len(x.split()))
     df["normed_time"] = df.timestamp.map(lambda t: log10(1.64775e12 - t))
     for w in important_words:
         df[w] = df.text.map(
@@ -111,7 +112,91 @@ def extract_continuous_features(
         mean = Xt.mean(axis=0)
         std = Xt.std(axis=0)
         mean_and_std = (mean, std)
-        print(std)
+    Xt = (Xt - mean_and_std[0]) / mean_and_std[1]
+
+    if train:
+        yt = df["retweets_count"].values[:, None]
+        return Xt, yt, mean_and_std
+    else:
+        return Xt
+
+def extract_many_continuous_features(
+    df: pd.DataFrame,
+    train=True,
+    important_words=["rt", "fav", "retweet", "macron", "lepen", "melenchon"],
+    mean_and_std=None,
+    cols: list[str] = [],
+    keep_cols: Optional[list[str]] = None,
+):
+    """If train, return the features X (np.ndarray), the labels y (np.ndarray), and the mean_and_std
+    else return only the features X  (np.ndarray)
+
+    important_words is a list of words which are used to create new features
+
+    mean_and_std is a tuple (mean, std) which is used to normalize the features,
+    (it should be computed on the training set).
+    
+    cols will be modified to contain the names of the features.
+    
+    keep_cols are the columns to keep as features, if None, take all.
+    """
+    
+    cols_=[
+        "logfav",
+        "text_len",
+        "logfriend",
+        "word_count",
+        "logstatus",
+        "normed_time",
+        "verified",
+        "hour",
+        "cos_hour",
+        "sin_hour",
+    ]
+
+    if train:
+        df["logrt"] = df.retweets_count.map(lambda x: log10(x + 1))
+    df["logfav"] = df.favorites_count.map(lambda x: log10(x + 1))
+    df["logfriend"] = df.friends_count.map(lambda x: log10(x + 1))
+    df["logstatus"] = df.statuses_count.map(lambda x: log10(x + 1))
+    df["text_len"] = df.text.map(lambda x: len(x) / 140)
+    df["word_count"] = df.text.map(lambda x: len(x.split()) / 140)
+    df["normed_time"] = df.timestamp.map(lambda t: log10(1.64775e12 - t))
+    for w in important_words:
+        df[w] = df.text.map(
+            lambda t: 1 if w in [word.lower() for word in t.split()] else 0
+        )
+    df["hour"] = df.timestamp.apply(lambda x: datetime.fromtimestamp(x / 1000.0).hour)
+    df["day"] = df.timestamp.apply(
+        lambda x: datetime.fromtimestamp(x / 1000.0).weekday()
+    )
+    df["cos_hour"] = df.hour.map(lambda h: cos(h / 24 * 2 * pi))
+    df["sin_hour"] = df.hour.map(lambda h: sin(h / 24 * 2 * pi))
+    df["weekday"] = df.timestamp.apply(
+        lambda x: datetime.fromtimestamp(x / 1000.0).weekday()
+    )
+    for w in important_words:
+        df["word_" + w] = df.text.map(
+            lambda t: 1 if w in [word.lower() for word in t.split()] else 0
+        )
+        if ("word_" + w) not in cols_:
+            cols_.append("word_" + w)
+    for weekday in range(7):
+        df["weekday_" + str(weekday)] = df.weekday.map(
+            lambda t: 1 if t == weekday else 0
+        )
+        if ("weekday_" + str(weekday)) not in cols_:
+            cols_.append("weekday_" + str(weekday))
+    
+    kept_cols = keep_cols or cols_
+    Xt = df[kept_cols].values
+    cols[:] = kept_cols
+
+    # Normalization
+    if mean_and_std is None:
+        mean = Xt.mean(axis=0)
+        std = Xt.std(axis=0)
+        mean_and_std = (mean, std)
     Xt = (Xt - mean_and_std[0]) / mean_and_std[1]
 
     if train:
