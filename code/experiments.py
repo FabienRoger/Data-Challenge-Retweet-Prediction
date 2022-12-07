@@ -3,15 +3,15 @@
 #%%
 # Which experiments do you want to run?
 experiments_to_run = {
-    "features_importance": False,
-    "threshold": False,
-    "hyperparameters": False,
-    "three_phase": False,
-    "knn": False,
-    "linear_regression": False,
-    "mlp_only": False,
-    "tree_only": False,
-    "text_embedding": False,
+    "features_importance": True,
+    "threshold": True,
+    "hyperparameters": True,
+    "three_phase": True,
+    "knn": True,
+    "linear_regression": True,
+    "mlp_only": True,
+    "tree_only": True,
+    "text_embedding": True,
     "td_idf": True,
 }
 
