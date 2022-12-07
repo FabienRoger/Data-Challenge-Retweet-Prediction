@@ -43,6 +43,7 @@ def get_trained_model(
     lr0=0.003,
     lr_decrease_start=40,
     reg=0.0,
+    linear: bool = False,
 ) -> keras.Model:
     """Build and train a simple MLP model"""
     scheduler = tf.keras.callbacks.LearningRateScheduler(
@@ -54,15 +55,18 @@ def get_trained_model(
 
     inputs = keras.Input(shape=(n_features,), name="digits")
     x = inputs
-    x = layers.Dense(units, activation="relu", name="dense_1", kernel_regularizer=tf.keras.regularizers.L2(reg))(x)
+    if not linear:
+        x = layers.Dense(units, activation="relu", name="dense_1", kernel_regularizer=tf.keras.regularizers.L2(reg))(x)
     x = layers.Dense(1, activation="linear", name="dense_2")(x)
-    x = tf.keras.activations.exponential(x)
-    x = layers.Dense(
-        1,
-        kernel_initializer=tf.keras.initializers.Ones(),
-        activation="linear",
-        name="predictions",
-    )(x)
+    # Exponential activation kept in the linear model because the linear function predict the log number or retweets
+    x = tf.keras.activations.exponential(x) 
+    if not linear:
+        x = layers.Dense(
+            1,
+            kernel_initializer=tf.keras.initializers.Ones(), # Use a One initializer to avoir a hard-to-reverse swap
+            activation="linear",
+            name="predictions",
+        )(x)
     model = keras.Model(inputs=inputs, outputs=x)
 
     model.compile(

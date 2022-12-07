@@ -38,103 +38,103 @@ tree = Tree(min_bucket_size=300, nb_cat=nb_cat, cols_n=list(range(len(cols)))).f
 # Run tree on new data
 val_preds = tree(X_val)
 #%%
-# Experiment: remove features one by one and see how it affects the performance
+# # Experiment: remove features one by one and see how it affects the performance
 
-cols = []
-# words and weekdays will be added by extract_many_continuous_features
+# cols = []
+# # words and weekdays will be added by extract_many_continuous_features
 
-_, n_features = extract_many_continuous_features(val_df, cols=cols)[0].shape
+# _, n_features = extract_many_continuous_features(val_df, cols=cols)[0].shape
 
-assert n_features == len(cols)
+# assert n_features == len(cols)
 
-# Thresholds for using the Tree or the MLP model
-thresh, eval_tresh = 100, 100
+# # Thresholds for using the Tree or the MLP model
+# thresh, eval_tresh = 100, 100
 
-scores = []
-for removed_feature, col in enumerate(cols):
-    print()
-    print(removed_feature, col)
+# scores = []
+# for removed_feature, col in enumerate(cols):
+#     print()
+#     print(removed_feature, col)
 
-    xltdf = train_df[train_df["favorites_count"] > thresh].copy()
-    X_train, y_train, ms = extract_many_continuous_features(xltdf)
-    X_val, y_val, _ = extract_many_continuous_features(val_df, mean_and_std=ms)
+#     xltdf = train_df[train_df["favorites_count"] > thresh].copy()
+#     X_train, y_train, ms = extract_many_continuous_features(xltdf)
+#     X_val, y_val, _ = extract_many_continuous_features(val_df, mean_and_std=ms)
 
-    X_train = X_train[:, [i for i in range(len(cols)) if i != removed_feature]]
-    X_val = X_val[:, [i for i in range(len(cols)) if i != removed_feature]]
+#     X_train = X_train[:, [i for i in range(len(cols)) if i != removed_feature]]
+#     X_val = X_val[:, [i for i in range(len(cols)) if i != removed_feature]]
 
-    model = get_trained_model(X_train, y_train, epochs=1000)
+#     model = get_trained_model(X_train, y_train, epochs=1000)
 
-    # evaluate the model and the quality of its predictions on the validation set
-    val_predictions = model.predict(X_val)
+#     # evaluate the model and the quality of its predictions on the validation set
+#     val_predictions = model.predict(X_val)
 
-    losses_tree = []
-    losses_nn = []
-    for i, (_, row) in enumerate(val_df.iterrows()):
-        if row["favorites_count"] <= eval_tresh:
-            losses_tree.append(abs(val_preds[i] - y_val[i]).item())
-        else:
-            losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+#     losses_tree = []
+#     losses_nn = []
+#     for i, (_, row) in enumerate(val_df.iterrows()):
+#         if row["favorites_count"] <= eval_tresh:
+#             losses_tree.append(abs(val_preds[i] - y_val[i]).item())
+#         else:
+#             losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
 
-    y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
-    print("nn difficulty", "tree difficulty")
-    print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
-    print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
-    print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
-    losses = losses_nn + losses_tree
-    overall = sum(losses) / len(losses)
-    print("overall", overall)
+#     y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
+#     print("nn difficulty", "tree difficulty")
+#     print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
+#     print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
+#     print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
+#     losses = losses_nn + losses_tree
+#     overall = sum(losses) / len(losses)
+#     print("overall", overall)
 
-    scores.append((overall, col))
+#     scores.append((overall, col))
 
-# save the experiments results
-json.dump(scores, open("scores.json", "w"))
-#%%
-# Experiment: change the threshold for for using the Tree or the MLP model and see how it affects the performance
+# # save the experiments results
+# json.dump(scores, open("scores.json", "w"))
+# #%%
+# # Experiment: change the threshold for for using the Tree or the MLP model and see how it affects the performance
 
-scores = []
-for thresh, eval_tresh in [
-    (50, 50),
-    (100, 100),
-    (200, 200),
-    (500, 500),
-    (25, 50),
-    (50, 100),
-    (100, 200),
-    (250, 500),
-]:
-    print()
-    print(thresh, eval_tresh)
+# scores = []
+# for thresh, eval_tresh in [
+#     (50, 50),
+#     (100, 100),
+#     (200, 200),
+#     (500, 500),
+#     (25, 50),
+#     (50, 100),
+#     (100, 200),
+#     (250, 500),
+# ]:
+#     print()
+#     print(thresh, eval_tresh)
 
-    xltdf = train_df[train_df["favorites_count"] > thresh].copy()
-    X_train, y_train, ms = extract_continuous_features(xltdf)
-    X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
+#     xltdf = train_df[train_df["favorites_count"] > thresh].copy()
+#     X_train, y_train, ms = extract_continuous_features(xltdf)
+#     X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
 
-    model = get_trained_model(X_train, y_train, epochs=1000)
+#     model = get_trained_model(X_train, y_train, epochs=1000)
 
-    # evaluate the model and the quality of its predictions on the validation set
-    val_predictions = model.predict(X_val)
+#     # evaluate the model and the quality of its predictions on the validation set
+#     val_predictions = model.predict(X_val)
 
-    losses_tree = []
-    losses_nn = []
-    for i, (_, row) in enumerate(val_df.iterrows()):
-        if row["favorites_count"] <= eval_tresh:
-            losses_tree.append(abs(val_preds[i] - y_val[i]).item())
-        else:
-            losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+#     losses_tree = []
+#     losses_nn = []
+#     for i, (_, row) in enumerate(val_df.iterrows()):
+#         if row["favorites_count"] <= eval_tresh:
+#             losses_tree.append(abs(val_preds[i] - y_val[i]).item())
+#         else:
+#             losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
 
-    y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
-    print("nn difficulty", "tree difficulty")
-    print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
-    print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
-    print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
-    losses = losses_nn + losses_tree
-    overall = sum(losses) / len(losses)
-    print("overall", overall)
+#     y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
+#     print("nn difficulty", "tree difficulty")
+#     print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
+#     print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
+#     print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
+#     losses = losses_nn + losses_tree
+#     overall = sum(losses) / len(losses)
+#     print("overall", overall)
 
-    scores.append((overall, thresh, eval_tresh))
+#     scores.append((overall, thresh, eval_tresh))
 
-# save the experiments results
-json.dump(scores, open("scores2.json", "w"))
+# # save the experiments results
+# json.dump(scores, open("scores2.json", "w"))
 
 #%%
 # Experiment: change the number of units and the regularization of the MLP model and see how it affects the performance
@@ -150,9 +150,6 @@ for units, reg in [(u, r) for u in [4, 16, 64, 128] for r in [0.0, 0.001, 0.1, 1
     xltdf = train_df[train_df["favorites_count"] > thresh].copy()
     X_train, y_train, ms = extract_continuous_features(xltdf)
     X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
-
-    X_train = X_train[:, [i for i in range(n_features) if i != removed_feature]]
-    X_val = X_val[:, [i for i in range(n_features) if i != removed_feature]]
 
     model = get_trained_model(X_train, y_train, epochs=1000, units=units, reg=reg)
 
@@ -190,8 +187,8 @@ for thresh1, thresh2 in [(100,50_000), (100,10_000), (50,10_000)]:
     print(thresh1, eval_tresh)
 
     xltdf = train_df[(train_df["favorites_count"] > thresh1) & train_df["favorites_count"] < thresh2].copy()
-    X_train, y_train = extract_continuous_features(xltdf)
-    X_val, y_val = extract_continuous_features(val_df)
+    X_train, y_train, ms = extract_continuous_features(xltdf)
+    X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
     
     model1 = get_trained_model(X_train, y_train, epochs=1000)
     
@@ -268,6 +265,8 @@ json.dump(scores, open("scores5.json", "w"))
 #%%
 # Experiment: baseline model: linear regression
 
+scores = []
+
 for reg in [0.0, 0.001, 0.1, 10.0]:
     print()
     print(reg)
@@ -276,7 +275,7 @@ for reg in [0.0, 0.001, 0.1, 10.0]:
     X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
 
     # evaluate the model and the quality of its predictions on the validation set
-    model = get_trained_model(X_train, y_train, reg=reg, epochs=1000, units=1)
+    model = get_trained_model(X_train, y_train, reg=reg, epochs=50, linear=True)
     
     val_predictions = model.predict(X_val)
 
@@ -310,7 +309,8 @@ json.dump(overall, open("scores7.json", "w"))
 X_train, y_train, ms = extract_continuous_features(train_df)
 X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
 
-model = get_trained_model(X_train, y_train, epochs=300) # 300 epochs is enough
+# 50 epochs is enough since it runs on the whole dataset
+model = get_trained_model(X_train, y_train, epochs=50)
 
 # evaluate the model and the quality of its predictions on the validation set
 val_predictions = model.predict(X_val)
