@@ -42,7 +42,7 @@ def get_trained_model(
     epochs=2000,
     lr0=0.003,
     lr_decrease_start=40,
-    reg=0.0,
+    reg=10.0,
     linear: bool = False,
 ) -> keras.Model:
     """Build and train a simple MLP model"""
