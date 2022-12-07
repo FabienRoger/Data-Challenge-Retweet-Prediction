@@ -17,16 +17,16 @@ plt.subplots_adjust(left=0.2)
 plt.savefig("figures/features_importance.png")
 plt.clf()
 # %%
-# Load the data for the treshold experiment: (score, treshold_train, treshold_eval)
-data = json.load(open("experiments_data/treshold.json", "r"))
+# Load the data for the threshold experiment: (score, treshold_train, treshold_eval)
+data = json.load(open("experiments_data/threshold.json", "r"))
 data_same_tresh = [d for d in data if d[1] == d[2]]
 data_double_tresh = [d for d in data if d[1] != d[2]]
-plt.plot([d[2] for d in data_same_tresh], [d[0] for d in data_same_tresh], label="Same treshold")
-plt.plot([d[2] for d in data_double_tresh], [d[0] for d in data_double_tresh], label="Halved train treshold treshold")
+plt.plot([d[2] for d in data_same_tresh], [d[0] for d in data_same_tresh], label="Same threshold")
+plt.plot([d[2] for d in data_double_tresh], [d[0] for d in data_double_tresh], label="Halved train threshold threshold")
 plt.ylabel("Loss")
-plt.xlabel("Evaluation treshold")
+plt.xlabel("Evaluation threshold")
 plt.legend()
-plt.savefig("figures/treshold.png")
+plt.savefig("figures/threshold.png")
 plt.clf()
 # %%
 # Load the data for the hyperparameter search: (score, neurons, regularization)
