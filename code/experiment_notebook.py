@@ -186,17 +186,16 @@ for thresh1, thresh2 in [(100,50_000), (100,10_000), (50,10_000)]:
     print()
     print(thresh1, thresh2)
 
-    xltdf = train_df[(train_df["favorites_count"] > thresh1) & train_df["favorites_count"] < thresh2].copy()
+    xltdf = train_df[(train_df["favorites_count"] > thresh1) & (train_df["favorites_count"] < thresh2)].copy()
     X_train, y_train, ms = extract_continuous_features(xltdf)
     X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
-    
     model1 = get_trained_model(X_train, y_train, epochs=1000)
     
     xltdf2 = train_df[train_df["favorites_count"] > thresh2].copy()
-    X_train2, y_train2 = extract_continuous_features(xltdf2)
+    X_train2, y_train2, _ = extract_continuous_features(xltdf2, mean_and_std=ms)
     X_train2 = X_train2[:, 0:1] # Only keep the favorites count
     
-    model2 = get_trained_model(X_train, y_train, linear=True, epochs=1000)
+    model2 = get_trained_model(X_train2, y_train2, linear=True, epochs=1000)
 
     val_predictions = model1.predict(X_val)
     val_predictions2 = model2.predict(X_val[:, 0:1])
@@ -224,84 +223,84 @@ for thresh1, thresh2 in [(100,50_000), (100,10_000), (50,10_000)]:
     scores.append((overall, thresh1, thresh2))
 json.dump(scores, open("scores4.json", "w"))
 
-# #%%
-# # Experiment: baseline model: k-NN
+#%%
+# Experiment: baseline model: k-NN
 
-# from sklearn.neighbors import KNeighborsRegressor
+from sklearn.neighbors import KNeighborsRegressor
 
-# alpha_values = [2,10,20]
-# k_values=[3,15]
-# scores = []
-# for alpha in alpha_values:
-#     for k in k_values:
-#         print()
-#         print(alpha, k)
+alpha_values = [2,10,20]
+k_values=[3,15]
+scores = []
+for alpha in alpha_values:
+    for k in k_values:
+        print()
+        print(alpha, k)
 
-#         X_train, y_train, ms = extract_continuous_features(train_df)
-#         X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
-#         X_val[:,][0]*=alpha
-#         X_train[:,][0]*=alpha
+        X_train, y_train, ms = extract_continuous_features(train_df)
+        X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
+        X_val[:,0]*=alpha
+        X_train[:,0]*=alpha
 
-#         model=KNeighborsRegressor(n_neighbors=k)
-#         model.fit(X_train, y_train)
+        model=KNeighborsRegressor(n_neighbors=k)
+        model.fit(X_train, y_train)
         
-#         # evaluate the model and the quality of its predictions on the validation set
-#         val_predictions = model.predict(X_val)
+        # evaluate the model and the quality of its predictions on the validation set
+        val_predictions = model.predict(X_val)
 
         
-#         losses_nn = []
-#         for i, (_, row) in enumerate(val_df.iterrows()):
-#             losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+        losses_nn = []
+        for i, (_, row) in enumerate(val_df.iterrows()):
+            losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
 
 
-#         losses = losses_nn
-#         overall = sum(losses) / len(losses)
-#         print("overall", overall)
-#         scores.append((overall, alpha, k))
+        losses = losses_nn
+        overall = sum(losses) / len(losses)
+        print("overall", overall)
+        scores.append((overall, alpha, k))
 
-# # save the experiments results
-# json.dump(scores, open("scores5.json", "w"))
+# save the experiments results
+json.dump(scores, open("scores5.json", "w"))
 
-# #%%
-# # Experiment: baseline model: linear regression
+#%%
+# Experiment: baseline model: linear regression
 
-# scores = []
+scores = []
 
-# for reg in [0.0, 0.001, 0.1, 10.0]:
-#     print()
-#     print(reg)
+for reg in [0.0, 0.001, 0.1, 10.0]:
+    print()
+    print(reg)
 
-#     X_train, y_train, ms = extract_continuous_features(train_df)
-#     X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
+    X_train, y_train, ms = extract_continuous_features(train_df)
+    X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
 
-#     # evaluate the model and the quality of its predictions on the validation set
-#     model = get_trained_model(X_train, y_train, reg=reg, epochs=50, linear=True)
+    # evaluate the model and the quality of its predictions on the validation set
+    model = get_trained_model(X_train, y_train, reg=reg, epochs=50, linear=True)
     
-#     val_predictions = model.predict(X_val)
+    val_predictions = model.predict(X_val)
 
     
-#     losses_nn = []
-#     for i, (_, row) in enumerate(val_df.iterrows()):
-#         losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+    losses_nn = []
+    for i, (_, row) in enumerate(val_df.iterrows()):
+        losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
 
 
-#     losses = losses_nn
-#     overall = sum(losses) / len(losses)
-#     print("overall", overall)
-#     scores.append((overall, reg))
+    losses = losses_nn
+    overall = sum(losses) / len(losses)
+    print("overall", overall)
+    scores.append((overall, reg))
 
-# # save the experiments results
-# json.dump(scores, open("scores6.json", "w"))
+# save the experiments results
+json.dump(scores, open("scores6.json", "w"))
 
-# # %%
-# # Experiment: baseline model: decision tree alone
+# %%
+# Experiment: baseline model: decision tree alone
 
-# losses = []
-# for i, (_, row) in enumerate(val_df.iterrows()):
-#     losses.append(abs(val_preds[i] - y_val[i]).item())
-# overall = sum(losses) / len(losses)
-# print("overall", overall)
-# json.dump(overall, open("scores7.json", "w"))
+losses = []
+for i, (_, row) in enumerate(val_df.iterrows()):
+    losses.append(abs(val_preds[i] - y_val[i]).item())
+overall = sum(losses) / len(losses)
+print("overall", overall)
+json.dump(overall, open("scores7.json", "w"))
 
 # %%
 # Experiment: baseline model: decision tree alone
