@@ -3,14 +3,16 @@
 #%%
 # Which experiments do you want to run?
 experiments_to_run = {
-    "features_importance": True,
-    "threshold": True,
-    "hyperparameters": True,
-    "three_phase": True,
-    "knn": True,
-    "linear_regression": True,
-    "mlp_only": True,
-    "tree_only": True,
+    "features_importance": False,
+    "threshold": False,
+    "hyperparameters": False,
+    "three_phase": False,
+    "knn": False,
+    "linear_regression": False,
+    "mlp_only": False,
+    "tree_only": False,
+    "text_embedding": False,
+    "td_idf": True,
 }
 
 #%%
@@ -353,3 +355,93 @@ if experiments_to_run["mlp_only"]:
     overall = sum(losses) / len(losses)
     print("overall", overall)
     json.dump(overall, open("experiments_data/mlp_only.json", "w"))
+
+# %%
+# Experiment: using text embeddings
+if experiments_to_run["text_embedding"]:
+    from sentence_transformers import SentenceTransformer
+    model_name = 'distiluse-base-multilingual-cased-v1'
+    smodel = SentenceTransformer(model_name)
+    
+    thresh, eval_tresh = 100, 100
+
+    xltdf = train_df[train_df["favorites_count"] > thresh].copy()
+    X_train, y_train, ms = extract_continuous_features(xltdf)
+    X_train = np.concatenate([smodel.encode(xltdf.text.values), X_train], axis=-1)
+    X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
+    X_val = np.concatenate([smodel.encode(val_df.text.values), X_val], axis=-1)
+
+    model = get_trained_model(X_train, y_train, epochs=1000)
+
+    # evaluate the model and the quality of its predictions on the validation set
+    val_predictions = model.predict(X_val)
+
+    losses_tree = []
+    losses_nn = []
+    for i, (_, row) in enumerate(val_df.iterrows()):
+        if row["favorites_count"] <= eval_tresh:
+            losses_tree.append(abs(val_preds[i] - y_val[i]).item())
+        else:
+            losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+
+    y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
+    print("nn difficulty", "tree difficulty")
+    print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
+    print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
+    print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
+    losses = losses_nn + losses_tree
+    overall = sum(losses) / len(losses)
+    print("overall", overall)
+
+    json.dump(overall, open("experiments_data/text_embedding.json", "w"))
+    
+# %%
+# Experiment: using text embeddings
+if experiments_to_run["td_idf"]:
+    
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from nltk.corpus import stopwords
+    import nltk
+    nltk.download('stopwords')
+    
+    thresh, eval_tresh = 100, 100
+    
+    scores = []
+    for max_features in [1, 10, 100, 1000]:
+        print()
+        print(max_features)
+        
+        vectorizer = TfidfVectorizer(max_features=max_features, stop_words=stopwords.words('french'))
+
+        xltdf = train_df[train_df["favorites_count"] > thresh].copy()
+        X_train, y_train, ms = extract_continuous_features(xltdf)
+        X_train = np.concatenate([vectorizer.fit_transform(xltdf.text.values).toarray(), X_train], axis=-1)
+        X_val, y_val, _ = extract_continuous_features(val_df, mean_and_std=ms)
+        X_val = np.concatenate([vectorizer.transform(val_df.text.values).toarray(), X_val], axis=-1)
+
+        model = get_trained_model(X_train, y_train, epochs=1000)
+
+        # evaluate the model and the quality of its predictions on the validation set
+        val_predictions = model.predict(X_val)
+
+        losses_tree = []
+        losses_nn = []
+        for i, (_, row) in enumerate(val_df.iterrows()):
+            if row["favorites_count"] <= eval_tresh:
+                losses_tree.append(abs(val_preds[i] - y_val[i]).item())
+            else:
+                losses_nn.append(abs(val_predictions[i] - y_val[i]).item())
+
+        y_ = train_df[train_df["favorites_count"] <= thresh]["retweets_count"].values
+        print("nn difficulty", "tree difficulty")
+        print((y_train - np.median(y_train)).mean(), (y_ - np.median(y_)).mean())
+        print("tree", sum(losses_tree) / len(losses_tree), sum(losses_tree))
+        print("nn", sum(losses_nn) / len(losses_nn), sum(losses_nn))
+        losses = losses_nn + losses_tree
+        overall = sum(losses) / len(losses)
+        print("overall", overall)
+
+        scores.append((overall, max_features))
+
+    # save the experiments results
+    json.dump(scores, open("experiments_data/td_idf.json", "w"))
