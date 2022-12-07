@@ -14,7 +14,7 @@ from utils.mlp import get_trained_model
 from utils.tree import Tree
 from pathlib import Path
 
-Path("experiment_data").mkdir(parents=True, exist_ok=True)
+Path("experiments_data").mkdir(parents=True, exist_ok=True)
 
 #%%
 # Load data
@@ -90,7 +90,7 @@ val_preds = tree(X_val)
 #     scores.append((overall, col))
 
 # # save the experiments results
-# json.dump(scores, open("experiment_data/features_importance.json", "w"))
+# json.dump(scores, open("experiments_data/features_importance.json", "w"))
 # #%%
 # # Experiment: change the threshold for for using the Tree or the MLP model and see how it affects the performance
 
@@ -137,7 +137,7 @@ val_preds = tree(X_val)
 #     scores.append((overall, thresh, eval_tresh))
 
 # # save the experiments results
-# json.dump(scores, open("experiment_data/treshold.json", "w"))
+# json.dump(scores, open("experiments_data/treshold.json", "w"))
 
 # #%%
 # # Experiment: change the number of units and the regularization of the MLP model and see how it affects the performance
@@ -179,7 +179,7 @@ val_preds = tree(X_val)
 #     scores.append((overall, units, reg))
 
 # # save the experiments results
-# json.dump(scores, open("experiment_data/hyperparameters.json", "w"))
+# json.dump(scores, open("experiments_data/hyperparameters.json", "w"))
 
 #%%
 # Experiment: add a third part to the model: a linear model for the tweets with many favorites
@@ -224,7 +224,7 @@ for thresh1, thresh2 in [(100,50_000), (100,10_000), (50,10_000)]:
     overall = sum(losses) / len(losses)
     print("overall",overall)
     scores.append((overall, thresh1, thresh2))
-json.dump(scores, open("experiment_data/three_phase.json", "w"))
+json.dump(scores, open("experiments_data/three_phase.json", "w"))
 
 #%%
 # Experiment: baseline model: k-NN
@@ -262,7 +262,7 @@ for alpha in alpha_values:
         scores.append((overall, alpha, k))
 
 # save the experiments results
-json.dump(scores, open("experiment_data/knn.json", "w"))
+json.dump(scores, open("experiments_data/knn.json", "w"))
 
 #%%
 # Experiment: baseline model: linear regression
@@ -293,7 +293,7 @@ for reg in [0.0, 0.001, 0.1, 10.0]:
     scores.append((overall, reg))
 
 # save the experiments results
-json.dump(scores, open("experiment_data/linear_regression.json", "w"))
+json.dump(scores, open("experiments_data/linear_regression.json", "w"))
 
 # %%
 # Experiment: baseline model: decision tree alone
@@ -303,7 +303,7 @@ for i, (_, row) in enumerate(val_df.iterrows()):
     losses.append(abs(val_preds[i] - y_val[i]).item())
 overall = sum(losses) / len(losses)
 print("overall", overall)
-json.dump(overall, open("experiment_data/tree_only.json", "w"))
+json.dump(overall, open("experiments_data/tree_only.json", "w"))
 
 # %%
 # Experiment: baseline model: decision tree alone
@@ -322,4 +322,4 @@ for i, (_, row) in enumerate(val_df.iterrows()):
     losses.append(abs(val_preds[i] - y_val[i]).item())
 overall = sum(losses) / len(losses)
 print("overall", overall)
-json.dump(overall, open("experiment_data/mlp_only.json", "w"))
+json.dump(overall, open("experiments_data/mlp_only.json", "w"))
